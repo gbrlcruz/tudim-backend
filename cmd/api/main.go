@@ -1,20 +1,38 @@
 package main
 
 import (
-    "context"
-    "log/slog"
-    "net/http"
-    "os"
-    "os/signal"
-    "syscall"
-    "time"
+	"context"
+	"log/slog"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
-    "github.com/go-chi/chi/v5"
-    "github.com/go-chi/chi/v5/middleware"
-    "github.com/joho/godotenv"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/joho/godotenv"
 
 	"github.com/gbrlcruz/tudim/backend/internal/meta"
 )
+
+func scrubbedLogger(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        start := time.Now()
+        ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
+        defer func() {
+            slog.Info("http",
+                "method", r.Method,
+                "path", r.URL.Path,     // path only, no raw query
+                "status", ww.Status(),
+                "bytes", ww.BytesWritten(),
+                "duration_ms", time.Since(start).Milliseconds(),
+                "request_id", middleware.GetReqID(r.Context()),
+            )
+        }()
+        next.ServeHTTP(ww, r)
+    })
+}
 
 func main() {
     // Load .env in dev (no-op in prod where envs come from Cloud Run)
@@ -26,7 +44,7 @@ func main() {
     r := chi.NewRouter()
     r.Use(middleware.Recoverer) // recovers from panics
     r.Use(middleware.RequestID)
-    r.Use(middleware.Logger)
+    r.Use(scrubbedLogger)
 
     r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
         w.Write([]byte("ok"))
@@ -44,6 +62,9 @@ func main() {
         Addr:              ":" + port,
         Handler:           r,
         ReadHeaderTimeout: 5 * time.Second,
+        ReadTimeout:       30 * time.Second,  // total time to read body
+        WriteTimeout:      30 * time.Second,  // total time to write response
+        IdleTimeout:       60 * time.Second,  // for keepalive connections
     }
 
     // Graceful shutdown — Cloud Run sends SIGTERM 10s before kill

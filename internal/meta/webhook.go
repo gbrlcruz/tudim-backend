@@ -59,7 +59,12 @@ type InboundMessage struct {
 }
 
 func ReceiveWebhook(w http.ResponseWriter, r *http.Request) {
-    body, _ := io.ReadAll(r.Body)
+    r.Body = http.MaxBytesReader(w, r.Body, 1<<20) // 1 MiB cap
+    body, err := io.ReadAll(r.Body)
+    if err != nil {
+        http.Error(w, "request too large", http.StatusRequestEntityTooLarge)
+        return
+    }
     defer r.Body.Close()
 
     if !ValidateSignature(body, r.Header.Get("X-Hub-Signature-256")) {
