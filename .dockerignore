@@ -1,9 +1,0 @@
-# .dockerignore
-.git
-.gitignore
-*.md
-.env
-.envrc
-migrations/
-node_modules/
-**/*.log
