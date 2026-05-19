@@ -6,8 +6,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from tudim.ai import classify, Intent
 from tudim.handlers import (
-    upsert_user, handle_note, handle_habit_log, handle_reminder,
-    handle_query, handle_command,
+    upsert_user,
+    handle_note,
+    handle_habit_log,
+    handle_reminder,
+    handle_query,
+    handle_command,
 )
 from tudim.handlers.commands import detect_command
 from tudim.handlers.rate_limit import check_rate_limit, increment_message_count

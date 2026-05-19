@@ -10,8 +10,12 @@ from tudim.domain import entities as domain
 
 def _to_entity(row: orm.Reminder) -> domain.Reminder:
     return domain.Reminder(
-        id=row.id, user_id=row.user_id, content=row.content,
-        scheduled_for=row.scheduled_for, status=row.status, sent_at=row.sent_at,
+        id=row.id,
+        user_id=row.user_id,
+        content=row.content,
+        scheduled_for=row.scheduled_for,
+        status=row.status,
+        sent_at=row.sent_at,
     )
 
 
@@ -19,8 +23,15 @@ class SqlReminderRepository:
     def __init__(self, session: AsyncSession):
         self._session = session
 
-    async def create(self, *, user_id: uuid.UUID, content: str, scheduled_for: datetime) -> domain.Reminder:
-        row = orm.Reminder(user_id=user_id, content=content, scheduled_for=scheduled_for, status="pending")
+    async def create(
+        self, *, user_id: uuid.UUID, content: str, scheduled_for: datetime
+    ) -> domain.Reminder:
+        row = orm.Reminder(
+            user_id=user_id,
+            content=content,
+            scheduled_for=scheduled_for,
+            status="pending",
+        )
         self._session.add(row)
         await self._session.flush()
         return _to_entity(row)
@@ -28,7 +39,11 @@ class SqlReminderRepository:
     async def list_pending_for_user(self, user_id: uuid.UUID) -> list[domain.Reminder]:
         stmt = (
             select(orm.Reminder)
-            .where(orm.Reminder.user_id == user_id, orm.Reminder.status == "pending", orm.Reminder.deleted_at.is_(None))
+            .where(
+                orm.Reminder.user_id == user_id,
+                orm.Reminder.status == "pending",
+                orm.Reminder.deleted_at.is_(None),
+            )
             .order_by(orm.Reminder.scheduled_for)
         )
         rows = (await self._session.execute(stmt)).scalars().all()
@@ -57,10 +72,14 @@ class SqlReminderRepository:
 
     async def mark_sent(self, reminder_id: uuid.UUID) -> None:
         await self._session.execute(
-            update(orm.Reminder).where(orm.Reminder.id == reminder_id).values(status="sent", sent_at=func.now())
+            update(orm.Reminder)
+            .where(orm.Reminder.id == reminder_id)
+            .values(status="sent", sent_at=func.now())
         )
 
     async def mark_failed(self, reminder_id: uuid.UUID) -> None:
         await self._session.execute(
-            update(orm.Reminder).where(orm.Reminder.id == reminder_id).values(status="failed")
+            update(orm.Reminder)
+            .where(orm.Reminder.id == reminder_id)
+            .values(status="failed")
         )

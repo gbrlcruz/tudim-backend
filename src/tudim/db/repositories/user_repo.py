@@ -27,7 +27,9 @@ class SqlUserRepository:
 
     async def get_by_phone(self, phone: str) -> domain.User | None:
         result = await self._session.execute(
-            select(orm.User).where(orm.User.phone_number == phone, orm.User.deleted_at.is_(None))
+            select(orm.User).where(
+                orm.User.phone_number == phone, orm.User.deleted_at.is_(None)
+            )
         )
         row = result.scalar_one_or_none()
         return _to_entity(row) if row else None
@@ -40,10 +42,14 @@ class SqlUserRepository:
 
     async def touch_last_inbound(self, user_id: uuid.UUID) -> None:
         await self._session.execute(
-            update(orm.User).where(orm.User.id == user_id).values(last_inbound_at=func.now())
+            update(orm.User)
+            .where(orm.User.id == user_id)
+            .values(last_inbound_at=func.now())
         )
 
-    async def try_increment_daily_count(self, user_id: uuid.UUID, daily_limit: int) -> bool:
+    async def try_increment_daily_count(
+        self, user_id: uuid.UUID, daily_limit: int
+    ) -> bool:
         """Returns True if user is still under daily limit (and increments)."""
         now = datetime.now(timezone.utc)
         row = await self._session.get(orm.User, user_id)
@@ -61,17 +67,24 @@ class SqlUserRepository:
         row.daily_message_count += 1
         return True
 
-    async def set_pending_destructive(self, user_id: uuid.UUID, action: str, ttl_minutes: int = 5) -> None:
+    async def set_pending_destructive(
+        self, user_id: uuid.UUID, action: str, ttl_minutes: int = 5
+    ) -> None:
         await self._session.execute(
-            update(orm.User).where(orm.User.id == user_id).values(
+            update(orm.User)
+            .where(orm.User.id == user_id)
+            .values(
                 pending_destructive_action=action,
-                pending_destructive_expires_at=datetime.now(timezone.utc) + timedelta(minutes=ttl_minutes),
+                pending_destructive_expires_at=datetime.now(timezone.utc)
+                + timedelta(minutes=ttl_minutes),
             )
         )
 
     async def clear_pending_destructive(self, user_id: uuid.UUID) -> None:
         await self._session.execute(
-            update(orm.User).where(orm.User.id == user_id).values(
+            update(orm.User)
+            .where(orm.User.id == user_id)
+            .values(
                 pending_destructive_action=None,
                 pending_destructive_expires_at=None,
             )

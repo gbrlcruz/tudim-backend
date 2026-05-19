@@ -9,7 +9,6 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 
-
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 db_url = os.environ["DATABASE_URL"]

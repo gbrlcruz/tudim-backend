@@ -13,7 +13,9 @@ from tudim.twilio_client.signature import verify_twilio_signature
 from tudim.twilio_client.send import send_text
 from tudim.api.auth import router as auth_router
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
+)
 log = logging.getLogger("tudim.api")
 
 

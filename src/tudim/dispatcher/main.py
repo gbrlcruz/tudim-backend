@@ -41,7 +41,9 @@ async def dispatch():
             try:
                 await send_text(user.phone_number, f"⏰ {rem['content']}")
                 await session.execute(
-                    text("UPDATE reminders SET status='sent', sent_at=NOW() WHERE id=:id"),
+                    text(
+                        "UPDATE reminders SET status='sent', sent_at=NOW() WHERE id=:id"
+                    ),
                     {"id": rem["id"]},
                 )
             except Exception:

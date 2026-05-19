@@ -14,7 +14,9 @@ router = APIRouter(prefix="/auth")
 
 
 @router.post("/request-otp", response_model=RequestOtpOut)
-async def request_otp(payload: RequestOtpIn, session: AsyncSession = Depends(get_session)):
+async def request_otp(
+    payload: RequestOtpIn, session: AsyncSession = Depends(get_session)
+):
     code = f"{secrets.randbelow(1000000):06d}"
     otp = OTPSession(
         phone_number=payload.phone_number,

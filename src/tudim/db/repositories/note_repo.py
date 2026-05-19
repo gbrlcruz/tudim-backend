@@ -46,7 +46,9 @@ class NoteRepository(Protocol):
         cursor_id: uuid.UUID | None = None,
     ) -> list[domain.Note]: ...
 
-    async def search_text(self, user_id: uuid.UUID, query: str, limit: int = 10) -> list[domain.Note]: ...
+    async def search_text(
+        self, user_id: uuid.UUID, query: str, limit: int = 10
+    ) -> list[domain.Note]: ...
 
     async def get_last(self, user_id: uuid.UUID) -> domain.Note | None: ...
 
@@ -78,9 +80,15 @@ class SqlNoteRepository:
         )
         if tag_ids:
             # Fetch tag rows to attach via relationship; they're already created by the tag repo.
-            tag_rows = (await self._session.execute(
-                select(orm.Tag).where(orm.Tag.id.in_(tag_ids))
-            )).scalars().all()
+            tag_rows = (
+                (
+                    await self._session.execute(
+                        select(orm.Tag).where(orm.Tag.id.in_(tag_ids))
+                    )
+                )
+                .scalars()
+                .all()
+            )
             row.tags = list(tag_rows)
         self._session.add(row)
         await self._session.flush()
@@ -97,12 +105,14 @@ class SqlNoteRepository:
         cursor_occurred_at: datetime | None = None,
         cursor_id: uuid.UUID | None = None,
     ) -> list[domain.Note]:
-        stmt = select(orm.Note).where(orm.Note.user_id == user_id, orm.Note.deleted_at.is_(None))
+        stmt = select(orm.Note).where(
+            orm.Note.user_id == user_id, orm.Note.deleted_at.is_(None)
+        )
 
         if tag_id is not None:
-            stmt = stmt.join(orm.note_tags, orm.Note.id == orm.note_tags.c.note_id).where(
-                orm.note_tags.c.tag_id == tag_id
-            )
+            stmt = stmt.join(
+                orm.note_tags, orm.Note.id == orm.note_tags.c.note_id
+            ).where(orm.note_tags.c.tag_id == tag_id)
         if from_dt is not None:
             stmt = stmt.where(orm.Note.occurred_at >= from_dt)
         if to_dt is not None:
@@ -112,15 +122,22 @@ class SqlNoteRepository:
             stmt = stmt.where(
                 and_(
                     orm.Note.occurred_at <= cursor_occurred_at,
-                    ~and_(orm.Note.occurred_at == cursor_occurred_at, orm.Note.id >= cursor_id),
+                    ~and_(
+                        orm.Note.occurred_at == cursor_occurred_at,
+                        orm.Note.id >= cursor_id,
+                    ),
                 )
             )
 
-        stmt = stmt.order_by(orm.Note.occurred_at.desc(), orm.Note.id.desc()).limit(limit)
+        stmt = stmt.order_by(orm.Note.occurred_at.desc(), orm.Note.id.desc()).limit(
+            limit
+        )
         rows = (await self._session.execute(stmt)).scalars().all()
         return [_to_entity(r) for r in rows]
 
-    async def search_text(self, user_id: uuid.UUID, query: str, limit: int = 10) -> list[domain.Note]:
+    async def search_text(
+        self, user_id: uuid.UUID, query: str, limit: int = 10
+    ) -> list[domain.Note]:
         stmt = (
             select(orm.Note)
             .where(
@@ -146,6 +163,9 @@ class SqlNoteRepository:
 
     async def soft_delete(self, note_id: uuid.UUID) -> None:
         from datetime import datetime, timezone
+
         await self._session.execute(
-            update(orm.Note).where(orm.Note.id == note_id).values(deleted_at=datetime.now(timezone.utc))
+            update(orm.Note)
+            .where(orm.Note.id == note_id)
+            .values(deleted_at=datetime.now(timezone.utc))
         )

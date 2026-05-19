@@ -9,6 +9,7 @@ authors = [
 requires-python = ">=3.10"
 dependencies = [
     "alembic>=1.18.4",
+    "black>=26.5.1",
     "fastapi>=0.136.1",
     "google-cloud-pubsub>=2.38.0",
     "google-genai>=2.4.0",

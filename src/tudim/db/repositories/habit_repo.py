@@ -10,15 +10,21 @@ from tudim.domain import entities as domain
 
 def _habit_to_entity(row: orm.Habit) -> domain.Habit:
     return domain.Habit(
-        id=row.id, user_id=row.user_id, name=row.name,
-        aliases=list(row.aliases or []), active=row.active,
+        id=row.id,
+        user_id=row.user_id,
+        name=row.name,
+        aliases=list(row.aliases or []),
+        active=row.active,
     )
 
 
 def _log_to_entity(row: orm.HabitLog) -> domain.HabitLog:
     return domain.HabitLog(
-        id=row.id, habit_id=row.habit_id, user_id=row.user_id,
-        occurred_at=row.occurred_at, details=row.details,
+        id=row.id,
+        habit_id=row.habit_id,
+        user_id=row.user_id,
+        occurred_at=row.occurred_at,
+        details=row.details,
     )
 
 
@@ -29,7 +35,11 @@ class SqlHabitRepository:
     async def list_active(self, user_id: uuid.UUID) -> list[domain.Habit]:
         stmt = (
             select(orm.Habit)
-            .where(orm.Habit.user_id == user_id, orm.Habit.active.is_(True), orm.Habit.deleted_at.is_(None))
+            .where(
+                orm.Habit.user_id == user_id,
+                orm.Habit.active.is_(True),
+                orm.Habit.deleted_at.is_(None),
+            )
             .order_by(orm.Habit.name)
         )
         rows = (await self._session.execute(stmt)).scalars().all()
@@ -46,7 +56,9 @@ class SqlHabitRepository:
         occurred_at: datetime,
         details: str | None = None,
     ) -> domain.HabitLog:
-        row = orm.HabitLog(habit_id=habit_id, user_id=user_id, occurred_at=occurred_at, details=details)
+        row = orm.HabitLog(
+            habit_id=habit_id, user_id=user_id, occurred_at=occurred_at, details=details
+        )
         self._session.add(row)
         await self._session.flush()
         return _log_to_entity(row)
@@ -69,7 +81,9 @@ class SqlHabitRepository:
 
 
 # Pure function — no repo needed, no DB needed. Moved out of the repo.
-def match_habit_by_aliases(habits: list[domain.Habit], text_segment: str) -> domain.Habit | None:
+def match_habit_by_aliases(
+    habits: list[domain.Habit], text_segment: str
+) -> domain.Habit | None:
     lowered = text_segment.lower()
     for habit in habits:
         for alias in [habit.name, *habit.aliases]:

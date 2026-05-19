@@ -18,11 +18,15 @@ class SqlTagRepository:
 
     async def list_names_for_user(self, user_id: uuid.UUID) -> list[str]:
         result = await self._session.execute(
-            select(orm.Tag.name).where(orm.Tag.user_id == user_id).order_by(orm.Tag.name)
+            select(orm.Tag.name)
+            .where(orm.Tag.user_id == user_id)
+            .order_by(orm.Tag.name)
         )
         return [r[0] for r in result.all()]
 
-    async def ensure_many(self, user_id: uuid.UUID, names: list[str]) -> list[domain.Tag]:
+    async def ensure_many(
+        self, user_id: uuid.UUID, names: list[str]
+    ) -> list[domain.Tag]:
         if not names:
             return []
 

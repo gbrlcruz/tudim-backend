@@ -22,6 +22,8 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
     async with SessionLocal() as session:
         yield session
 
+
 def make_uow() -> SqlAlchemyUnitOfWork:
     from tudim.domain.unit_of_work import SqlAlchemyUnitOfWork
+
     return SqlAlchemyUnitOfWork(SessionLocal)
